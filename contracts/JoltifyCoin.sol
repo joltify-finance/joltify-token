@@ -29,10 +29,9 @@ contract JoltifyCoin is ERC20, ERC20Burnable, Pausable, AccessControl, ERC20Capp
     // default admin role bytes32: 0x0000000000000000000000000000000000000000000000000000000000000000
 
     // default decimal is 18
-    constructor() ERC20("JoltifyCoin", "JTC") ERC20Capped(21000000 * 10 ** decimals()) { // set max supply
+    constructor() ERC20("JoltifyCoin", "Jolt") ERC20Capped(21000000 * 10 ** decimals()) { // set max supply
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(PAUSER_ROLE, msg.sender);
-        _mint(msg.sender, 10000000 * 10 ** decimals()); // mint token to owner address at begining
         _setupRole(MINTER_ROLE, msg.sender);
     }
 
