@@ -1,4 +1,4 @@
-// https://testnet.bscscan.com/address/0x3C7958D0c8856b127C6FB414F962b4f3Ff829612#writeContract
+// https://testnet.bscscan.com/address/0xAB6e9204661c2c9E5d788Aa42F507cd2Eb868147#writeContract
 // about supportsInterface: https://forum.openzeppelin.com/t/do-you-need-to-register-that-a-contract-supports-an-interface-using-erc165/6325
 
 // const ethers = require('ethers')
@@ -58,7 +58,7 @@ describe('Joltify Coin Testing', _=>{ // "describe" can also be replaced by "con
     assert(false) // mint success run this
   }).timeout(10000) // default timeout is 2000ms, sometimes it is not enough. https://stackoverflow.com/questions/48411794/getting-error-error-timeout-of-2000ms-exceeded-for-async-tests-and-hooks-en
 
-  it('Should ment proper amount', async ()=>{
+  it('Should mint proper amount', async ()=>{
     const amount = new BN(10000)
     await this.token.mint(this.address1, amount)
     const balance = await this.token.balanceOf(this.address1)
@@ -82,7 +82,7 @@ describe('Joltify Coin Testing', _=>{ // "describe" can also be replaced by "con
       // console.log(e.message) // Returned error: VM Exception while processing transaction: revert ERC20: transfer amount exceeds allowance -- Reason given: ERC20: transfer amount exceeds allowance.
       assert(e.message.includes('transfer amount exceeds allowance'))
       // approve and transferFrom again
-      await this.token.approve(this.address2, transferAmount, {from: this.address1}) // addr1 appreve to addr2
+      await this.token.approve(this.address2, transferAmount.mul(new BN(10)), {from: this.address1}) // addr1 appreve to addr2
       const balanceBefore = await this.token.balanceOf(this.address2)
       await this.token.transferFrom(this.address1, this.address2, transferAmount, {from: this.address2})
       const balanceAfter = await this.token.balanceOf(this.address2)
@@ -139,33 +139,49 @@ describe('Joltify Coin Testing', _=>{ // "describe" can also be replaced by "con
     }
   }).timeout(10000)
 
-  // burn amount exceeds allowance?
+  // burnFrom need allowance like transforFrom
   it('Should burnFrom properly', async ()=>{
     const amount = new BN(1)
     const balanceBefore = await this.token.balanceOf(this.address1)
-    // console.log('balanceBefore', balanceBefore.toString()) // 8925
     const totalSupplyBefore = await this.token.totalSupply()
-    await this.token.burnFrom(this.address1, amount) // Error: Returned error: VM Exception while processing transaction: revert ERC20: burn amount exceeds allowance -- Reason given: ERC20: burn amount exceeds allowance.
+    await this.token.burnFrom(this.address1, amount, {from: this.address2})
     const balanceAfter = await this.token.balanceOf(this.address1)
     const totalSupplyAfter = await this.token.totalSupply()
     assert( balanceBefore.sub(amount).eq(balanceAfter) && totalSupplyBefore.sub(amount).eq(totalSupplyAfter) )
   })
 
-  // who's balance burned?
+  // burn caller's balance
   it('Should burn properly', async ()=>{
     const totalSupplyBefore = await this.token.totalSupply()
-    console.log('totalSupplyBefore:', totalSupplyBefore.toString())
+    const balanceBefore = await this.token.balanceOf(this.address1)
     const amount = new BN(1)
     try {
-      await this.token.burn(totalSupplyBefore.add(new BN(1)))
+      await this.token.burn(balanceBefore.add(new BN(1)))
       assert(false)
     } catch(e) {
       // console.log(e.message) // Error: Returned error: VM Exception while processing transaction: revert ERC20: burn amount exceeds balance -- Reason given: ERC20: burn amount exceeds balance.
       assert(e.message.includes('burn amount exceeds balance'))
-      await this.token.burn(amount) // amount=1, burn amount exceeds balance?
+      await this.token.burn(amount, {from: this.address1}) // amount=1, burn amount exceeds balance?
       const totalSupplyAfter = await this.token.totalSupply()
-      console.log('totalSupplyAfter:', totalSupplyAfter.toString())
-      assert(totalSupplyBefore.sub(amount).eq(totalSupplyAfter))
+      const balanceAfter = await this.token.balanceOf(this.address1)
+      assert( balanceBefore.sub(amount).eq(balanceAfter) && totalSupplyBefore.sub(amount).eq(totalSupplyAfter) )
+    }
+  }).timeout(10000)
+
+  it('Should reject if not admin to set and remove roles', async ()=>{
+    try {
+      await this.token.grantRole(this.PAUSER_ROLE, this.address2, {from: this.address1})
+      assert(false)
+    } catch(e) {
+      // console.log(e.message) // Returned error: VM Exception while processing transaction: revert AccessControl: account 0xf17f52151ebef6c7334fad080c5704d77216b732 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000 -- Reason given: AccessControl: account 0xf17f52151ebef6c7334fad080c5704d77216b732 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000.
+      assert(e.message.includes('is missing role'))
+      try {
+        await this.token.revokeRole(this.PAUSER_ROLE, this.address1, {from: this.address2})
+        assert(false)
+      } catch (e) {
+        // console.log(e) // Returned error: VM Exception while processing transaction: revert AccessControl: account 0xf17f52151ebef6c7334fad080c5704d77216b732 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000 -- Reason given: AccessControl: account 0xf17f52151ebef6c7334fad080c5704d77216b732 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000.
+        assert(e.message.includes('is missing role'))
+      }
     }
   }).timeout(10000)
 
