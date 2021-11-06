@@ -18,6 +18,7 @@ describe('Joltify Coin Testing', _=>{ // "describe" can also be replaced by "con
     this.accounts = await web3.eth.getAccounts() // get all test accounts, accounts[0] is owner
     // console.log('this.accounts: ', this.accounts)
 
+    this.address0 = this.accounts[0]
     this.address1 = this.accounts[1] // to test transfer, roles, 
     this.address2 = this.accounts[2] // to test approve and transforFrom
 
@@ -188,16 +189,46 @@ describe('Joltify Coin Testing', _=>{ // "describe" can also be replaced by "con
   it('Should renounceRole properly', async ()=>{
     let hasRole = await this.token.hasRole(this.PAUSER_ROLE, this.address1)
     assert(hasRole)
-    await this.token.renounceRole(this.PAUSER_ROLE, this.address1, {from: this.address1})
-    hasRole = await this.token.hasRole(this.PAUSER_ROLE, this.address1)
-    assert(!hasRole)
+    try {
+      await this.token.renounceRole(this.PAUSER_ROLE, this.address1) // renounce by account[0](admin)
+      assert(false)
+    } catch(e) {
+      // console.log('renounce by others:', e.message) // enounce by others: Returned error: VM Exception while processing transaction: revert AccessControl: can only renounce roles for self -- Reason given: AccessControl: can only renounce roles for self.
+      assert(e.message.includes('can only renounce roles for self'))
+      await this.token.renounceRole(this.PAUSER_ROLE, this.address1, {from: this.address1})
+      hasRole = await this.token.hasRole(this.PAUSER_ROLE, this.address1)
+      assert(!hasRole)
+    }
   })
 
   it('Should revokeRole properly', async ()=>{
     let hasRole = await this.token.hasRole(this.MINTER_ROLE, this.address1)
     assert(hasRole)
-    await this.token.revokeRole(this.MINTER_ROLE, this.address1) // onlyOnew can revokeRole
+    await this.token.revokeRole(this.MINTER_ROLE, this.address1) // only admin can revokeRole
     hasRole = await this.token.hasRole(this.MINTER_ROLE, this.address1)
+    assert(!hasRole)
+  })
+
+  it('Should reject mint and pause after roles removed', async ()=>{
+    try {
+      await this.token.pause({from: this.address1})
+      assert(false)
+    } catch(e) {
+      assert(e.message.includes('is missing role'))
+      try {
+        await this.token.mint(this.address2, new BN(1), {from: this.address1})
+        assert(false)
+      } catch (e) {
+        assert(e.message.includes('is missing role'))
+      }
+    }
+  }).timeout(10000)
+
+  it('Test if last admin can be removed by itself', async ()=>{
+    let hasRole = await this.token.hasRole(this.DEFAULT_ADMIN_ROLE, this.address0)
+    assert(hasRole)
+    await this.token.revokeRole(this.DEFAULT_ADMIN_ROLE, this.address0)
+    hasRole = await this.token.hasRole(this.DEFAULT_ADMIN_ROLE, this.address0)
     assert(!hasRole)
   })
 
