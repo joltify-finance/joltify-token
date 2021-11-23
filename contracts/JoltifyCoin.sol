@@ -8,15 +8,16 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 
 contract JoltifyCoin is ERC20Capped, ERC20Burnable, Pausable, AccessControl  {
 
-    uint256 internal capOfToken = 21000000 * 10**decimals();
+    uint256 internal capOfToken = 500000000 * 10**decimals();
+    address constant public MultisigContractAddress = 0x2B0417D30a5f00b67E1aBCFBE38F194d9c85AD48;
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    constructor() ERC20("JoltifyCoin", "Jolt") ERC20Capped( capOfToken ) {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(PAUSER_ROLE, msg.sender);
-        _setupRole(MINTER_ROLE, msg.sender);
+    constructor() ERC20("JoltifyCoin", "JOLT") ERC20Capped( capOfToken ) {
+        _setupRole(DEFAULT_ADMIN_ROLE, MultisigContractAddress);
+        _setupRole(PAUSER_ROLE, MultisigContractAddress);
+        _setupRole(MINTER_ROLE, MultisigContractAddress);
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
