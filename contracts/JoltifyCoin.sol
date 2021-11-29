@@ -14,7 +14,7 @@ contract JoltifyCoin is ERC20Capped, ERC20Burnable, Pausable, AccessControl  {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    constructor() ERC20("JoltifyCoin", "JOLT") ERC20Capped( capOfToken ) {
+    constructor() ERC20("Joltify Coin", "JOLT") ERC20Capped( capOfToken ) {
         _setupRole(DEFAULT_ADMIN_ROLE, MultisigContractAddress);
         _setupRole(PAUSER_ROLE, MultisigContractAddress);
         _setupRole(MINTER_ROLE, MultisigContractAddress);
