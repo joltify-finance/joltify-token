@@ -3,6 +3,8 @@
 [https://www.joltify.io/](https://www.joltify.io/)
 ## Documents
 [https://docs.joltify.io/](https://docs.joltify.io/)
+## Security Audit Report
+Joltify Token was audited by CertiK. You can find the audit report [here](https://github.com/joltify-finance/joltify-token/blob/master/audit/Joltify%20Finance%20-%20Coin%20and%20Staking%20contract%20-%20Final%20Report.pdf).
 
 # How to run
 ## Set up
